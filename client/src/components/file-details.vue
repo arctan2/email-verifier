@@ -16,14 +16,16 @@ enum Tab {
 
 const msg = ref<string>("Loading...");
 const emailsCount = ref(0);
+const toVerifyCount = ref(0);
 const curTab = ref<Tab>(Tab.List);
 
 async function fetchFileDetails(fileId: number) {
-	const data = await fetchGet<{ emailsCount: number }>(`/${fileId}/get-file-details`);
+	const data = await fetchGet<{ emailsCount: number, toVerifyCount: number }>(`/${fileId}/get-file-details`);
 	if (data.err) {
 		msg.value = data.msg;
 	} else {
 		emailsCount.value = data.emailsCount;
+		toVerifyCount.value = data.toVerifyCount;
 		msg.value = "";
 	}
 }
@@ -60,7 +62,7 @@ watch(props, (cur) => {
 			/>
 			<Verification
 				v-if="curTab === Tab.Verification"
-				:totalEmailCount="emailsCount"
+				:to-verify-count="toVerifyCount"
 				:curFile="props.curSelected"
 			/>
 		</template>

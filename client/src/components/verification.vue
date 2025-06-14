@@ -11,7 +11,7 @@ import { Status, type VerifierDetails } from "../types/verifierTypes";
 import type { EmailFile } from '../types/dbTypes';
 
 const props = defineProps<{
-	totalEmailCount: number,
+	toVerifyCount: number,
 	curFile: EmailFile
 }>();
 
@@ -23,7 +23,7 @@ const verifierDetails = ref<null | VerifierDetails>(null);
 
 function createVerifier(batchSize: number, retryCount: number, delayMs: number, proxies: string[]) {
 	const details = {
-		emailCount: props.totalEmailCount,
+		emailCount: props.toVerifyCount,
 		batchSize,
 		retryCount,
 		delayMs,
@@ -73,6 +73,8 @@ function runVerifier() {
 
 function onDoneClick() {
 	ws.emit("remove-verifier");
+	curStatus.value = Status.NotCreated;
+	verifierDetails.value = null;
 }
 
 onMounted(async () => {
@@ -98,13 +100,15 @@ onUnmounted(() => {
 		<div v-else class="verify-container">
 			<VerifierInput
 				v-if="curStatus === Status.NotCreated"
-				:total-email-count="props.totalEmailCount"
+				:to-verify-count="props.toVerifyCount"
 				:create-verifier="createVerifier"
 			/>
+
 			<VerifierDetailsComp 
 				v-if="curStatus === Status.Created && verifierDetails !== null"
 				:verifier-details="verifierDetails"
 				:run-verifier="runVerifier"
+				:cancel-verifier="onDoneClick"
 			/>
 
 			<VerifierProgress

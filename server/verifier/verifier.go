@@ -17,6 +17,8 @@ type ProgressData struct {
 	Total int `json:"total"`
 	Progress int `json:"progress"`
 	Success int `json:"success"`
+	Failed int `json:"failed"`
+	Retry int `json:"retry"`
 	sync.Mutex `json:"-"`
 }
 
@@ -82,23 +84,27 @@ func NewProgressData(total int) *ProgressData {
 	return d
 }
 
-func (p *ProgressData) incProgress() {
-	p.Lock()
-	p.Progress++
-	p.Unlock()
+func (v *Verifier) SetWs(ws socket.Socket) {
+	v.ws = ws
 }
 
-func (v *Verifier) incProgress(success int) {
+func (v *Verifier) incProgress(success, failed, retry int) {
 	idx := len(v.CurrentProgressList) - 1
-	
 	p := v.CurrentProgressList[idx]
-	p.incProgress()
+
+	p.Lock()
+	
+	p.Progress++
 
 	p.Success += success
+	p.Failed += failed
+	p.Retry += retry
 
 	if p.Progress != 0 && p.Progress % 10 == 0 {
-		v.Emit("progress", strconv.Itoa(p.Progress))
+		socket.EmitWs(v.ws, "progress", p)
 	}
+
+	p.Unlock()
 }
 
 func (v *Verifier) Emit(ev string, data string) {
@@ -147,9 +153,19 @@ func (v *Verifier) Run() error {
 		truncateBatch()
 
 		v.CompletedBatches[v.CurrentBatchNumber] = make([]*ProgressData, len(v.CurrentProgressList))
-		copy(v.CompletedBatches[v.CurrentBatchNumber], v.CurrentProgressList)
+		for i := range v.CompletedBatches[v.CurrentBatchNumber] {
+			p := v.CurrentProgressList[i]
+			n := ProgressData{
+				Total: p.Total,
+				Progress: p.Progress,
+				Success: p.Success,
+				Failed: p.Failed,
+				Retry: p.Retry,
+			}
+			v.CompletedBatches[v.CurrentBatchNumber][i] = &n
+		}
 
-		v.Emit("delay", "")
+		v.Emit("batch-delay", "")
 		time.Sleep(time.Duration(delay) * time.Millisecond)
 		v.CurrentBatchNumber++
 	}
@@ -161,7 +177,17 @@ func (v *Verifier) Run() error {
 		v.verifyBatch(emails, i, len(emails), delay, retryRate)
 
 		v.CompletedBatches[v.CurrentBatchNumber] = make([]*ProgressData, len(v.CurrentProgressList))
-		copy(v.CompletedBatches[v.CurrentBatchNumber], v.CurrentProgressList)
+		for i := range v.CompletedBatches[v.CurrentBatchNumber] {
+			p := v.CurrentProgressList[i]
+			n := ProgressData{
+				Total: p.Total,
+				Progress: p.Progress,
+				Success: p.Success,
+				Failed: p.Failed,
+				Retry: p.Retry,
+			}
+			v.CompletedBatches[v.CurrentBatchNumber][i] = &n
+		}
 	}
 
 	v.State = DONE
@@ -183,6 +209,7 @@ func (s *RetryState) add(batchIdx, idx int) {
 }
 
 func (s *RetryState) reset() {
+	s.toRetryIdxs = make(map[int]int)
 	maps.Copy(s.toRetryIdxs, s.idxs)
 	s.idxs = make(map[int]int)
 }
@@ -203,12 +230,12 @@ func (v *Verifier) verifyBatch(emails []string, from, to, delay, retryRate int) 
 	retryState.reset()
 
 	if len(retryState.toRetryIdxs) == 0 {
-		v.Emit("after-all-retries", "0")
+		socket.EmitWs(v.ws, "after-all-retries", v.CurrentProgressList[len(v.CurrentProgressList) - 1])
 		return
 	}
 
 	for i := 0; i < retryRate; i++ {
-		v.Emit("delay", "")
+		socket.EmitWs(v.ws, "retry-delay", v.CurrentProgressList[len(v.CurrentProgressList) - 1])
 		time.Sleep(time.Duration(delay) * time.Millisecond)
 		l := len(retryState.toRetryIdxs)
 
@@ -218,13 +245,13 @@ func (v *Verifier) verifyBatch(emails []string, from, to, delay, retryRate int) 
 		socket.EmitWs(v.ws, "retry-begin", *p)
 		v.retryBatch(emails, i+1 == retryRate, &retryState)
 		if len(retryState.idxs) == 0 {
-			v.Emit("after-all-retries", "0")
+			socket.EmitWs(v.ws, "after-all-retries", *v.CurrentProgressList[len(v.CurrentProgressList) - 1])
 			return
 		}
 		retryState.reset()
 	}
 
-	v.Emit("after-all-retries", strconv.Itoa(len(retryState.toRetryIdxs)))
+	socket.EmitWs(v.ws, "after-all-retries", *v.CurrentProgressList[len(v.CurrentProgressList) - 1])
 }
 
 func (v *Verifier) retryBatch(emails []string, isLastRetry bool, retryState *RetryState) {
@@ -264,40 +291,44 @@ func (v *Verifier) verifyEmail(email string, batchIdx, idx int, retryState *Retr
 
 	defer wg.Done()
 
-
 	ret, err := verifier.Verify(email)
 
 	emailDetails := &v.CurrentBatch[batchIdx]
 
 	if err != nil {
 		e := err.Error()
+		retry := 0
 		if strings.Contains(e, "no such host") {
 			checkIsLastRetry(e)
 			retryState.add(batchIdx, idx)
+			retry = 1
 		} else if strings.Contains(e, "has timed out") {
 			checkIsLastRetry(e)
 			retryState.add(batchIdx, idx)
+			retry = 1
 		} else if strings.Contains(e, "i/o timeout") {
 			checkIsLastRetry(e)
 			retryState.add(batchIdx, idx)
+			retry = 1
 		} else if strings.Contains(e, "temporarily unavailable") {
 			checkIsLastRetry(e)
 			retryState.add(batchIdx, idx)
+			retry = 1
 		}
 		emailDetails.ErrorMsg = sql.NullString{String: e, Valid: true}
-		v.incProgress(0)
+		v.incProgress(0, 1, retry)
 		return
 	}
 
 	if !ret.Syntax.Valid {
 		emailDetails.IsValidSyntax = false
-		v.incProgress(0)
+		v.incProgress(1, 0, 0)
 		return
 	}
 
 	if ret == nil || ret.SMTP == nil {
 		emailDetails.IsHostExists = false
-		v.incProgress(0)
+		v.incProgress(1, 1, 0)
 		return
 	}
 
@@ -312,5 +343,5 @@ func (v *Verifier) verifyEmail(email string, batchIdx, idx int, retryState *Retr
 	emailDetails.IsCatchAll = ret.SMTP.CatchAll
 	emailDetails.IsInboxFull = ret.SMTP.FullInbox
 	emailDetails.ErrorMsg = sql.NullString{String: "", Valid: true}
-	v.incProgress(1)
+	v.incProgress(1, 0, 0)
 }

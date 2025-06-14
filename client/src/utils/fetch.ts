@@ -1,6 +1,6 @@
 import { ref } from "vue";
 
-export const baseURL = ref("http://192.168.0.107:8000");
+export const baseURL = ref("http://localhost:8000");
 
 export function API_URL(...endpoints: string[]) {
 	return `${baseURL.value}${endpoints.join("/")}`;

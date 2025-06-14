@@ -2,6 +2,7 @@ package webroutes
 
 import (
 	"context"
+	"email_verify/db"
 	"email_verify/respond"
 	"email_verify/schema"
 	"encoding/json"
@@ -64,33 +65,13 @@ func (m *WebRoutesHandler) getFileDetails(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	query := `select count(*) from emails where file_id = ?`
-
-	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelfunc()
-
-	stmt, err := m.db.PrepareContext(ctx, query)
-
+	totalEmailCount, err := db.GetTotalEmailCount(m.db, fileId)
 	if err != nil {
 		respond.RespondErrMsg(w, err.Error())
 		return
 	}
 
-	defer stmt.Close()
-
-	row := stmt.QueryRowContext(ctx, fileId)
-
-	if err = row.Err(); row.Err() != nil {
-		respond.RespondErrMsg(w, err.Error())
-		return
-	}
-
-	var count int64 = 0
-	if err := row.Scan(&count); err != nil {
-		respond.RespondErrMsg(w, err.Error())
-		return
-	}
-
+	toVerifyCount, err := db.GetToVerifyCount(m.db, fileId)
 	if err != nil {
 		respond.RespondErrMsg(w, err.Error())
 		return
@@ -98,10 +79,12 @@ func (m *WebRoutesHandler) getFileDetails(w http.ResponseWriter, r *http.Request
 
 	res := struct {
 		respond.ResponseStruct
-		EmailsCount int64 `json:"emailsCount"`
+		EmailsCount   int64 `json:"emailsCount"`
+		ToVerifyCount int64 `json:"toVerifyCount"`
 	}{
 		ResponseStruct: respond.SUCCESS,
-		EmailsCount:    count,
+		EmailsCount:    totalEmailCount,
+		ToVerifyCount:  toVerifyCount,
 	}
 
 	json.NewEncoder(w).Encode(&res)
@@ -176,8 +159,8 @@ func (m *WebRoutesHandler) getEmailDetailsList(w http.ResponseWriter, r *http.Re
 		respond.ResponseStruct
 		EmailDetailsList []schema.EmailDetails `json:"emailDetailsList"`
 	}{
-		ResponseStruct: respond.SUCCESS,
-		EmailDetailsList:       details,
+		ResponseStruct:   respond.SUCCESS,
+		EmailDetailsList: details,
 	}
 
 	json.NewEncoder(w).Encode(&res)

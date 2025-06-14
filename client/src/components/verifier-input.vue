@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { setPopupError } from '../utils/popup-data';
 
 const props = defineProps<{
-	totalEmailCount: number,
+	toVerifyCount: number,
 	createVerifier: (batchSize: number, retryCount: number, delayMs: number, proxies: string[]) => void
 }>();
 
@@ -46,7 +46,8 @@ function createVerifier() {
 
 <template>
 	<div class="verify-inputs">
-		<div>Total emails: {{ props.totalEmailCount }}</div>
+		<h1>Create verifier</h1>
+		<div>To verify emails: {{ props.toVerifyCount }}</div>
 		<div>Batch size: <input type="number" v-model="batchSizeInput" /></div>
 		<div>Retry count: <input type="number" v-model="retryCountInput" /></div>
 		<div>Delay(ms): <input type="number" v-model="delayMsInput" /></div>
@@ -83,6 +84,11 @@ function createVerifier() {
 
 .verify-inputs > div{
 	margin-bottom: 0.5rem;
+}
+
+h1{
+	font-size: 1.5rem;
+	margin-bottom: 1rem;
 }
 
 #proxies{

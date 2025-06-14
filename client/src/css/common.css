@@ -58,6 +58,10 @@
 	--clr: rgb(255, 41, 41);
 }
 
+.clr-white{
+	--clr: rgb(255, 255, 255);
+}
+
 .clr-yellow{
 	--clr: rgb(255, 255, 41);
 }
@@ -91,6 +95,10 @@
 .btn-nobg:hover {
 	background-color: var(--clr);
 	color: rgb(255, 255, 255);
+}
+
+.btn-nobg.clr-white:hover{
+	color: black;
 }
 
 input[type="text"], input[type="number"]{

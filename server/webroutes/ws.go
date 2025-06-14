@@ -86,6 +86,7 @@ func (m *WebRoutesHandler) verificationWsConn(w http.ResponseWriter, r *http.Req
 
 	if v := verifier.VerifierManager.Get(fileId); v != nil {
 		ws.Emit("status", v.State)
+		v.SetWs(ws)
 	} else {
 		ws.Emit("status", verifier.NOT_CREATED)
 	}

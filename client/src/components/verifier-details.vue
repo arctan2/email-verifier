@@ -3,18 +3,26 @@ import type { VerifierDetails } from '../types/verifierTypes';
 
 const props = defineProps<{
 	verifierDetails: VerifierDetails,
-	runVerifier: () => void
+	runVerifier: () => void,
+	cancelVerifier: () => void
 }>();
-
-console.log(props.verifierDetails)
 
 </script>
 
 <template>
-	<div class="verifier-details">
+	<div class="verifier-details-container">
 		<h1>Verifier</h1>
-		<div>
-			<button class="btn btn-nobg clr-green" @click="props.runVerifier">Run</button>
+		<div class="verifier-details">
+			<div>To verify: {{ verifierDetails.emailCount }}</div>
+			<div>Batch size: {{ verifierDetails.batchSize }}</div>
+			<div>Delay(ms): {{ verifierDetails.delayMs }}</div>
+			<div>Retry count: {{ verifierDetails.retryCount }}</div>
+			<div>Proxies: <div v-for="p in verifierDetails.proxies">{{ p }}</div></div>
+
+			<div>
+				<button class="btn btn-nobg clr-green" @click="props.runVerifier">run</button>
+				<button class="btn btn-nobg clr-white" @click="cancelVerifier">cancel</button>
+			</div>
 		</div>
 	</div>
 </template>
@@ -22,7 +30,7 @@ console.log(props.verifierDetails)
 <style scoped>
 @import "@css/common.css";
 
-.verifier-details{
+.verifier-details-container{
 	display: flex;
 	flex-direction: column;
 	position: relative;
@@ -30,7 +38,6 @@ console.log(props.verifierDetails)
 	height: 92%;
 	margin-bottom: 1rem;
 	padding: 0.5rem;
-	background-color: rgb(40, 40, 40);
 	border-radius: 6px;
 	width: 100%;
 }
@@ -38,6 +45,15 @@ console.log(props.verifierDetails)
 h1{
 	font-size: 1.5rem;
 	margin-bottom: 1rem;
+}
+
+.verifier-details > div{
+	margin-bottom: 0.5rem;
+}
+
+button {
+	margin-top: 1rem;
+	margin-right: 1rem;
 }
 
 </style>

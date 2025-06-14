@@ -1,7 +1,9 @@
 export interface ProgressData {
 	total: number,
 	progress: number,
-	success: number
+	success: number,
+	failed: number,
+	retry: number
 }
 
 export enum Status {
@@ -14,8 +16,8 @@ export enum Status {
 export interface VerifierDetails {
 	batchSize: number,
 	completedBatches: { [_:number]: ProgressData[] },
-	currentBatchNumber: 0,
-	currentBatchSize: 0,
+	currentBatchNumber: number,
+	currentBatchSize: number,
 	currentProgressList: ProgressData[]
 	delayMs: number
 	emailCount: number,

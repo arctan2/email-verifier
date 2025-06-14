@@ -78,3 +78,34 @@ func GetToVerifyCount(db *sql.DB, fileId int64) (int64, error) {
 	return count, nil
 }
 
+func GetTotalEmailCount(db *sql.DB, fileId int64) (int64, error) {
+	query := `select count(*) from emails where file_id = ?`
+
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+
+	stmt, err := db.PrepareContext(ctx, query)
+
+	if err != nil {
+		return 0, err
+	}
+
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(ctx, fileId)
+
+	if err = row.Err(); row.Err() != nil {
+		return 0, err
+	}
+
+	var count int64 = 0
+	if err := row.Scan(&count); err != nil {
+		return 0, err
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
