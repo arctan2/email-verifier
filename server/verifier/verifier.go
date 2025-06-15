@@ -1,15 +1,20 @@
 package verifier
 
 import (
+	"context"
 	"database/sql"
 	"email_verify/db"
 	"email_verify/schema"
 	"email_verify/socket"
+	"fmt"
+	"io"
 	"maps"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
 	// emailverifier "github.com/AfterShip/email-verifier"
 )
 
@@ -36,6 +41,7 @@ type VerifierData struct {
 	RetryCount int `json:"retryCount"`
 	DelayMs int `json:"delayMs"`
 	Proxies []string `json:"proxies"`
+	CurProxyIdx int `json:"curProxyIdx"`
 
 	CompletedBatches map[int][]*ProgressData `json:"completedBatches"`
 
@@ -113,6 +119,19 @@ func (v *Verifier) Emit(ev string, data string) {
 	}
 }
 
+func (v *Verifier) updateProxy() {
+	if len(v.Proxies) == 0 {
+		v.CurProxyIdx = -1
+		return
+	}
+
+	v.CurProxyIdx++
+
+	if v.CurProxyIdx >= len(v.Proxies) {
+		v.CurProxyIdx = 0
+	}
+}
+
 func (v *Verifier) Run() error {
 	v.State = RUNNING
 	emails, err := db.GetEmailsForVerification(v.db, v.File.Id)
@@ -133,11 +152,19 @@ func (v *Verifier) Run() error {
 	v.CurrentBatch = make([]schema.EmailDetails, s)
 	v.CompletedBatches = make(map[int][]*ProgressData)
 	v.CurrentProgressList = []*ProgressData{}
+	v.CurProxyIdx = -1
 
-	truncateBatch := func() {
-		for i := range v.CurrentBatch {
+	v.updateProxy()
+
+	truncateAndConvCsvBatch := func(batchSize int) string {
+		csvStr := ""
+
+		for i := 0; i < batchSize; i++ {
+			csvStr += v.CurrentBatch[i].ToCSVLn()
 			v.CurrentBatch[i] = schema.EmailDetails{}
 		}
+
+		return strings.TrimSuffix(csvStr, "\n")
 	}
 
 	i := 0
@@ -150,7 +177,12 @@ func (v *Verifier) Run() error {
 
 		v.verifyBatch(emails, i, i+batchSize, delay, retryRate)
 
-		truncateBatch()
+		v.ws.Emit("update-db-start", "")
+		csvStr := truncateAndConvCsvBatch(batchSize)
+		if err := v.updateCsvStrToDB(csvStr); err != nil {
+			return err
+		}
+		v.ws.Emit("update-db-done", "")
 
 		v.CompletedBatches[v.CurrentBatchNumber] = make([]*ProgressData, len(v.CurrentProgressList))
 		for i := range v.CompletedBatches[v.CurrentBatchNumber] {
@@ -168,6 +200,7 @@ func (v *Verifier) Run() error {
 		v.Emit("batch-delay", "")
 		time.Sleep(time.Duration(delay) * time.Millisecond)
 		v.CurrentBatchNumber++
+		v.updateProxy()
 	}
 
 	if i < len(emails) {
@@ -175,6 +208,13 @@ func (v *Verifier) Run() error {
 		v.Emit("batch-start", strconv.Itoa(v.CurrentBatchNumber))
 
 		v.verifyBatch(emails, i, len(emails), delay, retryRate)
+
+		v.ws.Emit("update-db-start", "")
+		csvStr := truncateAndConvCsvBatch(len(emails) - i)
+		if err := v.updateCsvStrToDB(csvStr); err != nil {
+			return err
+		}
+		v.ws.Emit("update-db-done", "")
 
 		v.CompletedBatches[v.CurrentBatchNumber] = make([]*ProgressData, len(v.CurrentProgressList))
 		for i := range v.CompletedBatches[v.CurrentBatchNumber] {
@@ -194,6 +234,74 @@ func (v *Verifier) Run() error {
 
 	socket.EmitWs(v.ws, "get-verifier-details-res", v.VerifierData)
 	return nil
+}
+
+func (v *Verifier) updateCsvStrToDB(csvStr string) error {
+	tmpTableId := "tmp_tbl_" + strconv.FormatInt(v.File.Id, 10) + "_" + strconv.Itoa(v.CurrentBatchNumber)
+
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+
+	_, err := v.db.ExecContext(ctx, fmt.Sprintf(`CREATE TEMPORARY TABLE IF NOT EXISTS %s (
+		file_id int NOT NULL,
+		email_id varchar(320) NOT NULL,
+		is_valid_syntax tinyint NOT NULL DEFAULT '0',
+		is_reachable tinyint NOT NULL DEFAULT '0',
+		is_deliverable tinyint NOT NULL DEFAULT '0',
+		is_host_exists tinyint NOT NULL DEFAULT '0',
+		has_mx_records tinyint NOT NULL DEFAULT '0',
+		is_disposable tinyint NOT NULL DEFAULT '0',
+		is_catch_all tinyint NOT NULL DEFAULT '0',
+		is_inbox_full tinyint NOT NULL DEFAULT '0',
+		error_msg text DEFAULT NULL,
+		PRIMARY KEY (email_id)
+	)`, tmpTableId))
+
+	if err != nil {
+		return err
+	}
+
+	reader := strings.NewReader(csvStr)
+
+	handlerID := "load_file_to_tmp_tbl_" + strconv.FormatInt(v.File.Id, 10) + "_" + strconv.Itoa(v.CurrentBatchNumber)
+
+	mysql.RegisterReaderHandler(handlerID, func() io.Reader {
+		return reader
+	})
+
+	_, err = v.db.ExecContext(ctx, fmt.Sprintf(`
+	LOAD DATA LOCAL INFILE 'Reader::%s'
+	INTO TABLE %s
+	FIELDS TERMINATED BY ',' 
+	ENCLOSED BY '"' 
+	LINES TERMINATED BY '\n'`, handlerID, tmpTableId))
+
+	if err != nil {
+		return err
+	}
+
+	_, err = v.db.ExecContext(ctx, fmt.Sprintf(`
+		UPDATE emails e
+		JOIN %s t ON e.file_id = t.file_id and e.email_id = t.email_id
+		set
+			e.is_valid_syntax = t.is_valid_syntax,
+			e.is_reachable = t.is_reachable,
+			e.is_deliverable = t.is_deliverable,
+			e.is_host_exists = t.is_host_exists,
+			e.has_mx_records = t.has_mx_records,
+			e.is_disposable = t.is_disposable,
+			e.is_catch_all = t.is_catch_all,
+			e.is_inbox_full = t.is_inbox_full,
+			e.error_msg = t.error_msg
+	`, tmpTableId))
+
+	if err != nil {
+		return err
+	}
+
+	_, err = v.db.ExecContext(ctx, fmt.Sprintf(`DROP TEMPORARY TABLE %s`, tmpTableId))
+
+	return err
 }
 
 type RetryState struct {
@@ -217,13 +325,14 @@ func (s *RetryState) reset() {
 func (v *Verifier) verifyBatch(emails []string, from, to, delay, retryRate int) {
 	retryState := RetryState{make(map[int]int), make(map[int]int), sync.Mutex{}}
 	wg := sync.WaitGroup{}
-	for i, j := from, 0; i < to; i, j = i+1, j+1 {
-		email := strings.TrimSpace(emails[i])
-		if email == "" {
-			continue
-		}
+	i := from
+	batchIdx := 0
+	for i < to {
+		email := emails[i]
 		wg.Add(1)
-		go v.verifyEmail(email, j, i, &retryState, false, &wg)
+		go v.verifyEmail(email, batchIdx, i, &retryState, false, &wg)
+		i++
+		batchIdx++
 	}
 	wg.Wait()
 
@@ -257,10 +366,7 @@ func (v *Verifier) verifyBatch(emails []string, from, to, delay, retryRate int) 
 func (v *Verifier) retryBatch(emails []string, isLastRetry bool, retryState *RetryState) {
 	wg := sync.WaitGroup{}
 	for batchIdx, idx := range retryState.toRetryIdxs {
-		email := strings.TrimSpace(emails[idx])
-		if email == "" {
-			continue
-		}
+		email := emails[idx]
 		wg.Add(1)
 		go v.verifyEmail(email, batchIdx, idx, retryState, isLastRetry, &wg)
 	}
@@ -272,16 +378,18 @@ func (v *Verifier) verifyEmail(email string, batchIdx, idx int, retryState *Retr
 	// 	verifier = emailverifier.
 	// 		NewVerifier().
 	// 		EnableSMTPCheck().
-	// 		EnableCatchAllCheck().
-	// 		Proxy("socks5://139.59.24.173:1080?timeout=5s")
+	// 		EnableCatchAllCheck()
 	// )
 
 	var (
 		verifier = NewTestVerifier().
 			EnableSMTPCheck().
-			EnableCatchAllCheck().
-			Proxy("socks5://139.59.24.173:1080?timeout=5s")
+			EnableCatchAllCheck()
 	)
+
+	if v.CurProxyIdx != -1 {
+		verifier = verifier.Proxy(v.Proxies[v.CurProxyIdx])
+	}
 
 	checkIsLastRetry := func(e string) {
 		if(isLastRetry) {
@@ -295,13 +403,29 @@ func (v *Verifier) verifyEmail(email string, batchIdx, idx int, retryState *Retr
 
 	emailDetails := &v.CurrentBatch[batchIdx]
 
+	emailDetails.FileId = v.File.Id
+	emailDetails.EmailId = email
+
+	if ret != nil {
+		emailDetails.ErrorMsg = sql.NullString{String: "", Valid: true}
+
+		if !ret.Syntax.Valid {
+			emailDetails.IsValidSyntax = false
+			v.incProgress(1, 1, 0)
+			return
+		}
+
+		emailDetails.IsValidSyntax = ret.Syntax.Valid
+		emailDetails.HasMxRecords = ret.HasMxRecords
+	}
+
 	if err != nil {
 		e := err.Error()
 		retry := 0
 		if strings.Contains(e, "no such host") {
-			checkIsLastRetry(e)
-			retryState.add(batchIdx, idx)
-			retry = 1
+			emailDetails.IsHostExists = false
+			v.incProgress(1, 1, 0)
+			return
 		} else if strings.Contains(e, "has timed out") {
 			checkIsLastRetry(e)
 			retryState.add(batchIdx, idx)
@@ -314,34 +438,26 @@ func (v *Verifier) verifyEmail(email string, batchIdx, idx int, retryState *Retr
 			checkIsLastRetry(e)
 			retryState.add(batchIdx, idx)
 			retry = 1
+		} else {
+			emailDetails.ErrorMsg = sql.NullString{String: e, Valid: true}
 		}
-		emailDetails.ErrorMsg = sql.NullString{String: e, Valid: true}
 		v.incProgress(0, 1, retry)
-		return
-	}
-
-	if !ret.Syntax.Valid {
-		emailDetails.IsValidSyntax = false
-		v.incProgress(1, 0, 0)
 		return
 	}
 
 	if ret == nil || ret.SMTP == nil {
 		emailDetails.IsHostExists = false
+		emailDetails.ErrorMsg = sql.NullString{String: "ret or SMTP is nil", Valid: true}
 		v.incProgress(1, 1, 0)
 		return
 	}
 
-	emailDetails.FileId = v.File.Id
-	emailDetails.EmailId = email
-	emailDetails.IsValidSyntax = ret.Syntax.Valid
+	emailDetails.IsCatchAll = ret.SMTP.CatchAll
 	emailDetails.IsReachable = ret.Reachable == "yes"
 	emailDetails.IsDeliverable = ret.SMTP.Deliverable
 	emailDetails.IsHostExists = ret.SMTP.HostExists
-	emailDetails.HasMxRecords = ret.HasMxRecords
 	emailDetails.IsDisposable = ret.Disposable
-	emailDetails.IsCatchAll = ret.SMTP.CatchAll
 	emailDetails.IsInboxFull = ret.SMTP.FullInbox
-	emailDetails.ErrorMsg = sql.NullString{String: "", Valid: true}
+
 	v.incProgress(1, 0, 0)
 }

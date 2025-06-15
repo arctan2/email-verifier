@@ -22,6 +22,7 @@ const curProgress = ref<ProgressData>({
 })
 const curBatchBody = ref<HTMLDivElement[]>([]);
 const isDelay = ref(false);
+const isDBUpdate = ref(false);
 
 function listenWs() {
 	ws.on("batch-start", (data: string) => {
@@ -81,6 +82,14 @@ function listenWs() {
 		isDelay.value = true;
 	})
 
+	ws.on("update-db-start", () => {
+		isDBUpdate.value = true;
+	})
+
+	ws.on("update-db-done", () => {
+		isDBUpdate.value = false;
+	})
+
 	ws.on("retry-begin", (data: ProgressData) => {
 		isDelay.value = false;
 		curProgress.value = data;
@@ -133,6 +142,7 @@ onMounted(() => {
 
 					<template v-if="batch.num === curBatch">
 						<div v-if="isDelay" class="delay">Delay</div>
+						<div v-else-if="isDBUpdate" class="delay">DB update</div>
 						<div class="progress" v-else>
 							Progress: <span class="retry-result">
 								{{curProgress.progress}}/{{curProgress.total}}

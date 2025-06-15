@@ -7,7 +7,7 @@ import DeleteIcon from '../assets/icons/delete.svg';
 import Modal from '../common-components/modal.vue';
 
 const props = defineProps<{
-	setCurSelected: (f: EmailFile) => void,
+	setCurSelected: (f: null | EmailFile) => void,
 	curSelected: EmailFile | null
 }>();
 
@@ -64,6 +64,9 @@ async function deleteTransaction() {
 		setPopupError(res.msg);
 	} else {
 		setPopupInfo("File deleted successfully.");
+		if(props.curSelected?.id === id) {
+			props.setCurSelected(null);
+		}
 	}
 	showLoadingMessage.value = "";
 
@@ -78,6 +81,7 @@ function handleFileSelect(e: Event) {
 	for(const f of filesAsArray) {
 		uploadFile(f);
 	}
+	input.value = "";
 }
 
 fetchAllAccounts();
@@ -101,7 +105,7 @@ fetchAllAccounts();
 
 		<h1>Files</h1>
 		<div id="files-list" class="scroll-bar">
-			<div v-if="msg !== '' && uploadingList.length === 0" style="text-align: center;">{{ msg }}</div>
+			<div v-if="msg !== '' && uploadingList.length === 0" style="text-align: center; margin-bottom: 1rem;">{{ msg }}</div>
 			<template v-else>
 				<div v-for="f, idx in filesList" :key="idx">
 					<div :class="['file', props.curSelected?.id === f.id ? 'selected-file' : '']" @click.self="props.setCurSelected(f)">
@@ -125,8 +129,8 @@ fetchAllAccounts();
 				<label for="upload-excel-files" class="upload-input">Click to upload files</label>
 				<input type="file" accept=".txt" id="upload-excel-files" @change="handleFileSelect" multiple>
 			</div>
-			<div class="refreshing" v-if="showLoadingMessage !== ''">{{ showLoadingMessage }}</div>
 		</div>
+		<div class="refreshing" v-if="showLoadingMessage !== ''">{{ showLoadingMessage }}</div>
 	</div>
 </template>
 
@@ -135,8 +139,8 @@ fetchAllAccounts();
 
 #files-list-container {
 	padding: 0.5rem;
-	background-color: rgb(255, 255, 255);
-	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+	background-color: rgb(60, 60, 60);
+	color: white;
 	border-radius: 6px;
 	width: 100%;
 	max-width: 20rem;
@@ -164,7 +168,7 @@ h1 {
 	align-items: center;
 	justify-content: space-between;
 	border-radius: 6px;
-	border: 2px solid rgb(72, 0, 255);
+	border: 2px solid rgb(3, 148, 252);
 	margin-bottom: 0.8rem;
 	padding: 0.5rem;
 	cursor: pointer;
@@ -174,11 +178,13 @@ h1 {
 }
 
 .selected-file {
-	background-color: rgba(255, 255, 0, 0.5);
+	border: 2px solid yellow;
+	background-color: rgba(255, 255, 0, 0.2);
 }
 
 .file.selected-file:hover{
-	background-color: rgba(255, 255, 0, 0.5);
+	border: 2px solid yellow;
+	background-color: rgba(255, 255, 0, 0.2);
 }
 
 .file>div {
@@ -186,7 +192,7 @@ h1 {
 }
 
 .file:hover {
-	background-color: rgba(72, 0, 255, 0.2);
+	background-color: rgba(3, 148, 252, 0.2);
 }
 
 .file-id {
@@ -196,7 +202,6 @@ h1 {
 }
 
 .file-name {
-	color: #333333;
 	pointer-events: none;
 	user-select: none;
 }
@@ -211,7 +216,7 @@ input[type=file] {
 	align-items: center;
 	width: 100%;
 	height: 4rem;
-	border: 3px dashed #1111ff;
+	border: 3px dashed rgb(3, 148, 252);
 	border-radius: 6px;
 	font-family: monospace;
 	cursor: pointer;
@@ -231,7 +236,7 @@ input[type=file] {
 	height: 1.5rem;
 	position: absolute;
 	right: 1rem;
-	border-left: 3px solid black;
+	border-left: 3px solid white;
 	border-radius: 10rem;
 	animation: spin 1s infinite linear;
 }
@@ -285,13 +290,15 @@ input[type=file] {
 	width: 100%;
 	height: 100%;
 	background-color: rgba(0, 0, 0, 0.7);
+	z-index: 100;
 	border-radius: 6px;
 	color: white;
 }
 
 .delete-modal{
 	justify-content: space-between;
-	background-color: rgb(255, 255, 255);
+	background-color: rgb(30, 30, 30);
+	color: white;
 	border: 2px solid #ff6161;
 }
 

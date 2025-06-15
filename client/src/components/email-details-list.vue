@@ -15,8 +15,10 @@ const emailList = ref<EmailDetails[]>([]);
 const showLoadingMessage = ref<string>("");
 const limit = ref<number>(500);
 const pagesCount = computed(() => Math.ceil(props.totalEmailCount / limit.value))
+const toShowErrIdxs = ref<Set<number>>(new Set);
 
 async function fetchRecords(from: number) {
+	toShowErrIdxs.value.clear();
 	emailList.value = [];
 	showLoadingMessage.value = "Loading...";
 
@@ -39,6 +41,12 @@ async function refresh() {
 		fetchRecords(0),
 	])
 	showLoadingMessage.value = "";
+}
+
+function toggleErrMsg(idx: number) {
+	if(emailList.value[idx].errorMsg.String === "") return;
+	if(toShowErrIdxs.value.has(idx)) toShowErrIdxs.value.delete(idx);
+	else toShowErrIdxs.value.add(idx);
 }
 
 onMounted(() => {
@@ -64,19 +72,29 @@ onMounted(() => {
 						<div>inbox-full</div>
 					</div>
 				</div>
-				<div v-for="email, idx in emailList" :key="idx" class="email">
+				<div 
+					v-for="email, idx in emailList"
+					:key="idx"
+					:class="['email', email.errorMsg.String !== '' ? 'error-mail' : '']"
+					@click="toggleErrMsg(idx)"
+				>
 					<div>
-						{{ email.emailId }}
+						<div>
+							{{ email.emailId }}
+						</div>
+						<div v-if="toShowErrIdxs.has(idx)" class="error-msg">
+							{{ email.errorMsg.String }}
+						</div>
 					</div>
-					<div class="state">
+					<div class="state" v-if="email.errorMsg.Valid">
 						<div :class="[email.isValidSyntax ? 'green' : 'red']"></div>
-						<div :class="[email.isValidSyntax ? 'green' : 'red']"></div>
-						<div :class="[email.isValidSyntax ? 'green' : 'red']"></div>
-						<div :class="[email.isValidSyntax ? 'green' : 'red']"></div>
-						<div :class="[email.isValidSyntax ? 'green' : 'red']"></div>
-						<div :class="[email.isValidSyntax ? 'green' : 'red']"></div>
-						<div :class="[email.isValidSyntax ? 'green' : 'red']"></div>
-						<div :class="[email.isValidSyntax ? 'green' : 'red']"></div>
+						<div :class="[email.isReachable ? 'green' : 'red']"></div>
+						<div :class="[email.isDeliverable ? 'green' : 'red']"></div>
+						<div :class="[email.isHostExists ? 'green' : 'red']"></div>
+						<div :class="[email.hasMxRecords ? 'green' : 'red']"></div>
+						<div :class="[email.isDisposable ? 'green' : 'red']"></div>
+						<div :class="[email.isCatchAll ? 'green' : 'red']"></div>
+						<div :class="[email.isInboxFull ? 'green' : 'red']"></div>
 					</div>
 				</div>
 			</div>
@@ -134,10 +152,21 @@ h1{
 	width: 100%;
 	position: relative;
 	border-radius: 6px;
-	margin-bottom: 0.5rem;
+	margin-bottom: 0.2rem;
 	background-color: rgb(60, 60, 60);
 	padding: 0.5rem;
 	font-family: monospace;
+}
+
+.error-mail{
+	outline: 2px solid rgb(255, 90, 90);
+	outline-offset: -2px;
+	cursor: pointer;
+	transition: 0.2s;
+}
+
+.error-mail:hover{
+	background-color: rgb(90, 60, 60);
 }
 
 .icon-btns{
@@ -223,6 +252,11 @@ h1{
 
 .state .red {
 	background-color: rgb(255, 0, 0);
+}
+
+.error-msg{
+	margin-top: 0.5rem;
+	color: rgb(255, 150, 150);
 }
 
 @media (max-width: 55rem){

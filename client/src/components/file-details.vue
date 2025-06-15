@@ -30,6 +30,11 @@ async function fetchFileDetails(fileId: number) {
 	}
 }
 
+function goToList() {
+	curTab.value = Tab.List;
+	fetchFileDetails(props.curSelected?.id as number);
+}
+
 watch(props, (cur) => {
 	if(cur.curSelected !== null) {
 		msg.value = "Loading...";
@@ -64,6 +69,7 @@ watch(props, (cur) => {
 				v-if="curTab === Tab.Verification"
 				:to-verify-count="toVerifyCount"
 				:curFile="props.curSelected"
+				:go-to-list="goToList"
 			/>
 		</template>
 	</div>
@@ -81,7 +87,8 @@ watch(props, (cur) => {
 	padding: 0.5rem;
 	border-radius: 6px;
 	margin-left: 0.2rem;
-	background-color: rgb(255, 255, 255);
+	background-color: rgb(60, 60, 60);
+	color: white;
 }
 
 .file-details{
@@ -91,7 +98,7 @@ watch(props, (cur) => {
 	border-radius: 6px;
 	box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 	margin-bottom: 0.5rem;
-	border: 2px solid #555555;
+	border: 2px solid #666666;
 }
 
 .button-container {
@@ -105,8 +112,8 @@ watch(props, (cur) => {
 }
 
 .selected-button{
-	background-color: black;
-	color: white;
+	background-color: white;
+	color: black;
 }
 
 </style>

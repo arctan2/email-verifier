@@ -14,6 +14,6 @@ export type EmailDetails = {
 	isDisposable: boolean,
 	isCatchAll: boolean,
 	isInboxFull: boolean,
-	errorMsg: string,
+	errorMsg: { String: string, Valid: boolean },
 }
 

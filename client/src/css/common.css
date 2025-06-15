@@ -19,7 +19,7 @@
 }
 
 .btn{
-	--clr: black;
+	--clr: white;
 	display: inline-block;
 	min-width: 5rem;
 	height: 2rem;
@@ -94,7 +94,7 @@
 
 .btn-nobg:hover {
 	background-color: var(--clr);
-	color: rgb(255, 255, 255);
+	color: rgb(0, 0, 0);
 }
 
 .btn-nobg.clr-white:hover{

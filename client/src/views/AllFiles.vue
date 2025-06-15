@@ -12,7 +12,7 @@ const curSelectedFile = ref<null | EmailFile>(null);
 	<div id="files">
 		<FileList
 			:curSelected="curSelectedFile"
-			:setCurSelected="f => curSelectedFile = f.id === curSelectedFile?.id ? null : f"
+			:setCurSelected="(f: null | EmailFile) => curSelectedFile = f?.id === curSelectedFile?.id ? null : f"
 		/>
 		<FileDetails 
 			:curSelected="curSelectedFile"
@@ -29,6 +29,7 @@ const curSelectedFile = ref<null | EmailFile>(null);
 	justify-content: center;
 	align-items: center;
 	position: relative;
+	background-color: rgb(40, 40, 40);
 	width: 100%;
 	height: 100%;
 	padding: 0.2rem;

@@ -10,7 +10,8 @@ export enum Status {
 	NotCreated = "not created",
 	Created = "created",
 	Running = "running",
-	Done = "done"
+	Done = "done",
+	Err = "err"
 }
 
 export interface VerifierDetails {

@@ -86,6 +86,10 @@ func (m *WebRoutesHandler) insertEmailsToDB(file multipart.File, fileId int64) (
 	lines := bytes.Split(buf, []byte("\n"))
 
 	idBytes := make([]byte, len(buf))
+	// literally have no idea why I'm supposed to add the header
+	// the load data infile query is ignoring first line even though I
+	// am not doing IGNORE 1 LINES
+	idBytes = append(idBytes, []byte("file_id,email_id\n")...)
 
 	for i := range lines {
 		if len(lines[i]) == 0 {
@@ -93,14 +97,14 @@ func (m *WebRoutesHandler) insertEmailsToDB(file multipart.File, fileId int64) (
 		}
 
 		b := []byte(fmt.Sprintf("\"%d\",\"", fileId))
-		lines[i] = append(b, lines[i]...)
+		lines[i] = append(b, bytes.ReplaceAll(lines[i], []byte(`"`), []byte(`""`))...)
 		lines[i] = append(lines[i], []byte("\"\n")...)
 		idBytes = append(idBytes, lines[i]...)
 	}
 
-	reader := bytes.NewReader(idBytes[:len(idBytes) - 1])
+	reader := bytes.NewReader(idBytes)
 
-	handlerID := "upload-file-" + strconv.FormatInt(fileId, 10)
+	handlerID := "upload_csv_data_" + strconv.FormatInt(fileId, 10)
 
 	mysql.RegisterReaderHandler(handlerID, func() io.Reader {
 		return reader
@@ -110,8 +114,7 @@ func (m *WebRoutesHandler) insertEmailsToDB(file multipart.File, fileId int64) (
 		INTO TABLE emails
 		FIELDS TERMINATED BY ',' 
 		ENCLOSED BY '"'
-		LINES TERMINATED BY '\n'
-		IGNORE 1 LINES`, handlerID)
+		LINES TERMINATED BY '\n';`, handlerID)
 
 	_, err = m.db.Exec(query)
 

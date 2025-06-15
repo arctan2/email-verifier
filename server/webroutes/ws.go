@@ -61,9 +61,13 @@ func listenEvents(ws socket.Socket, fileId int64, db *sql.DB) {
 
 	ws.On("run-verifier", func(_ []byte) {
 		if v := verifier.VerifierManager.Get(fileId); v != nil {
-			v.Run()
+			err := v.Run()
+
+			if err != nil {
+				ws.EmitErr("run-verifier-err", err.Error()).Close()
+			}
 		} else {
-			ws.EmitErr("run-verifier-res", "verifier not found.").Close()
+			ws.EmitErr("run-verifier-err", "verifier not found.").Close()
 		}
 	})
 }

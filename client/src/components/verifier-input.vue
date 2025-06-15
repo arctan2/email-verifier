@@ -7,9 +7,9 @@ const props = defineProps<{
 	createVerifier: (batchSize: number, retryCount: number, delayMs: number, proxies: string[]) => void
 }>();
 
-const batchSizeInput = ref(2);
-const delayMsInput = ref(5000);
-const retryCountInput = ref(2);
+const batchSizeInput = ref(1000);
+const delayMsInput = ref(1000);
+const retryCountInput = ref(3);
 const proxiesInput = ref("");
 
 function createVerifier() {

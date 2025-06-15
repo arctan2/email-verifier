@@ -12,7 +12,8 @@ import type { EmailFile } from '../types/dbTypes';
 
 const props = defineProps<{
 	toVerifyCount: number,
-	curFile: EmailFile
+	curFile: EmailFile,
+	goToList: () => void
 }>();
 
 const ws = new Socket()
@@ -20,6 +21,7 @@ const ws = new Socket()
 const msg = ref("Loading...");
 const curStatus = ref<Status>(Status.NotCreated);
 const verifierDetails = ref<null | VerifierDetails>(null);
+const errMsg = ref<string>("");
 
 function createVerifier(batchSize: number, retryCount: number, delayMs: number, proxies: string[]) {
 	const details = {
@@ -65,16 +67,26 @@ function listenWs() {
 		curStatus.value = details.state;
 		msg.value = "";
 	})
+
+	ws.on("run-verifier-err", (err: string) => {
+		curStatus.value = Status.Err;
+		errMsg.value = err;
+	})
 }
 
 function runVerifier() {
 	ws.emit("run-verifier");
 }
 
-function onDoneClick() {
+function removeVerifier() {
 	ws.emit("remove-verifier");
 	curStatus.value = Status.NotCreated;
 	verifierDetails.value = null;
+}
+
+function onDoneClick() {
+	removeVerifier();
+	props.goToList();
 }
 
 onMounted(async () => {
@@ -108,7 +120,7 @@ onUnmounted(() => {
 				v-if="curStatus === Status.Created && verifierDetails !== null"
 				:verifier-details="verifierDetails"
 				:run-verifier="runVerifier"
-				:cancel-verifier="onDoneClick"
+				:cancel-verifier="removeVerifier"
 			/>
 
 			<VerifierProgress
@@ -122,6 +134,8 @@ onUnmounted(() => {
 				:verifier-details="verifierDetails"
 				:done="onDoneClick"
 			/>
+
+			<div v-if="curStatus === Status.Err" style="color: red">{{ errMsg }}</div>
 		</div>
 	</div>
 </template>

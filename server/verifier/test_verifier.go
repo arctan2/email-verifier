@@ -27,12 +27,18 @@ func (t *TestVerifier) Proxy(s string) *TestVerifier {
 	return t
 }
 
+func randBool() bool {
+	return rand.Intn(2) == 1
+}
+
 func (t *TestVerifier) Verify(s string) (*emailverifier.Result, error) {
-	errs := []string{"no such host", "has timed out", "i/o timeout", "temporarily unavailable", "catastrophic damage"}
+	errs := []string{
+		"no such host", "has timed out", "i/o timeout", "temporarily unavailable", "you're blocked", "catastrophic damage",
+	}
 
 	var e error = nil
 
-	if rand.Intn(2) == 1 {
+	if randBool() {
 		e = errors.New(errs[rand.Intn(len(errs))])
 	}
 
@@ -42,8 +48,8 @@ func (t *TestVerifier) Verify(s string) (*emailverifier.Result, error) {
 
 	res := emailverifier.Result{
 		Email: s,
-		Reachable: "",
-		Syntax: emailverifier.Syntax{ Username: "", Domain: "", Valid: true },
+		Reachable: "yes",
+		Syntax: emailverifier.Syntax{ Username: "", Domain: "", Valid: randBool() },
 		SMTP: &emailverifier.SMTP{
 			HostExists: true,
 			FullInbox: false,
