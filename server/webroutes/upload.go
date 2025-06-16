@@ -31,7 +31,7 @@ func (m *WebRoutesHandler) insertFileDetails(fname string) (error, int64, string
 		return errors.New("Unsupported file extension."), fileId, fileName
 	}
 
-	query := `call sp_insert_file(?)`
+	query := `call sp_insert_file(?, ?)`
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
@@ -44,7 +44,7 @@ func (m *WebRoutesHandler) insertFileDetails(fname string) (error, int64, string
 
 	defer stmt.Close()
 
-	row := stmt.QueryRowContext(ctx, fname)
+	row := stmt.QueryRowContext(ctx, "admin", fname)
 
 	if err = row.Err(); row.Err() != nil {
 		return err, fileId, fileName
@@ -58,7 +58,7 @@ func (m *WebRoutesHandler) insertFileDetails(fname string) (error, int64, string
 }
 
 func (m *WebRoutesHandler) deleteFile(id int64) error {
-	query := `call sp_delete_file_by_id(?)`
+	query := `call sp_delete_file_by_id(?, ?)`
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
@@ -71,7 +71,7 @@ func (m *WebRoutesHandler) deleteFile(id int64) error {
 
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, id)
+	_, err = stmt.ExecContext(ctx, "admin", id)
 
 	return err
 }

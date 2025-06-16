@@ -3,7 +3,7 @@ import { watch, ref } from 'vue';
 import { fetchGet } from '../utils/fetch';
 import type { EmailFile } from '../types/dbTypes';
 import EmailsDetailsList from "./email-details-list.vue";
-import Verification from "./verification.vue";
+import Verification from "./verification/verification.vue";
 
 const props = defineProps<{
 	curSelected: null | EmailFile

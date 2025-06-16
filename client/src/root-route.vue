@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import AllFiles from './views/AllFiles.vue';
+import Login from './views/Login.vue';
 
 </script>
 
 <template>
-	<AllFiles />
+	<Login />
 </template>
 
 <style scoped>

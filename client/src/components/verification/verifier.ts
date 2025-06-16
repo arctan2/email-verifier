@@ -1,4 +1,4 @@
-import type { ProgressData } from "../types/verifierTypes";
+import type { ProgressData } from "../../types/verifierTypes";
 
 export interface Batch {
 	num: number,

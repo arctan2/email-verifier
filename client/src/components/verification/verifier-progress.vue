@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 import { Socket } from '../socket/socket';
 import type { VerifierDetails } from '../types/verifierTypes';
 import type { ProgressData } from '../types/verifierTypes';
