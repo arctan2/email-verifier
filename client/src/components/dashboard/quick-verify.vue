@@ -3,7 +3,6 @@
 
 <template>
 	<div id="quick-verify">
-		qf
 	</div>
 </template>
 

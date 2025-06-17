@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { Socket } from '../socket/socket';
-import type { VerifierDetails } from '../types/verifierTypes';
-import type { ProgressData } from '../types/verifierTypes';
+import { Socket } from '../../socket/socket';
+import type { VerifierDetails } from '../../types/verifierTypes';
+import type { ProgressData } from '../../types/verifierTypes';
 import { type Batch, computeBatchesList } from "./verifier";
 
 const { verifierDetails, ws } = defineProps<{
@@ -163,7 +163,7 @@ onMounted(() => {
 	flex-direction: column;
 	position: relative;
 	overflow-y: auto;
-	height: 92%;
+	height: 100%;
 	margin-bottom: 1rem;
 	padding: 0.5rem;
 	border-radius: 6px;

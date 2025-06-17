@@ -5,11 +5,9 @@ import { computed, onMounted, ref } from 'vue';
 import Pagination from '../common-components/pagination.vue';
 import { fetchGet } from '../utils/fetch';
 import { setPopupError } from '../utils/popup-data';
+import { emailListProps } from "../state/email-list-route-state";
 
-const props = defineProps<{
-	totalEmailCount: number,
-	fileId: number
-}>();
+const props = emailListProps.value;
 
 const emailList = ref<EmailDetails[]>([]);
 const showLoadingMessage = ref<string>("");

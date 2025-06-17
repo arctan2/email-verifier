@@ -139,7 +139,7 @@ func (m *WebRoutesHandler) getEmailDetailsList(w http.ResponseWriter, r *http.Re
 			&detail.FileId,
 			&detail.EmailId,
 			&detail.IsValidSyntax,
-			&detail.IsReachable,
+			&detail.Reachable,
 			&detail.IsDeliverable,
 			&detail.IsHostExists,
 			&detail.HasMxRecords,

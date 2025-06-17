@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { setPopupError } from '../utils/popup-data';
+import { setPopupError } from '../../utils/popup-data';
 
 const props = defineProps<{
 	toVerifyCount: number,
@@ -64,7 +64,7 @@ function createVerifier() {
 <style scoped>
 @import "@css/common.css";
 
-.verify{
+.verify-inputs{
 	display: flex;
 	flex-direction: column;
 	position: relative;
@@ -72,14 +72,8 @@ function createVerifier() {
 	height: 92%;
 	margin-bottom: 1rem;
 	padding: 0.5rem;
-	background-color: rgb(40, 40, 40);
 	border-radius: 6px;
 	width: 100%;
-}
-
-.verify-inputs{
-	display: flex;
-	flex-direction: column;
 }
 
 .verify-inputs > div{

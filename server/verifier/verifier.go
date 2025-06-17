@@ -150,6 +150,10 @@ func (v *Verifier) Run() error {
 	}
 
 	v.CurrentBatch = make([]schema.EmailDetails, s)
+	for i := range v.CurrentBatch {
+		v.CurrentBatch[i] = schema.NewEmailDetails()
+	}
+
 	v.CompletedBatches = make(map[int][]*ProgressData)
 	v.CurrentProgressList = []*ProgressData{}
 	v.CurProxyIdx = -1
@@ -161,7 +165,7 @@ func (v *Verifier) Run() error {
 
 		for i := 0; i < batchSize; i++ {
 			csvStr += v.CurrentBatch[i].ToCSVLn()
-			v.CurrentBatch[i] = schema.EmailDetails{}
+			v.CurrentBatch[i] = schema.NewEmailDetails()
 		}
 
 		return strings.TrimSuffix(csvStr, "\n")
@@ -246,7 +250,7 @@ func (v *Verifier) updateCsvStrToDB(csvStr string) error {
 		file_id int NOT NULL,
 		email_id varchar(320) NOT NULL,
 		is_valid_syntax tinyint NOT NULL DEFAULT '0',
-		is_reachable tinyint NOT NULL DEFAULT '0',
+		reachable varchar(10) NOT NULL DEFAULT '',
 		is_deliverable tinyint NOT NULL DEFAULT '0',
 		is_host_exists tinyint NOT NULL DEFAULT '0',
 		has_mx_records tinyint NOT NULL DEFAULT '0',
@@ -285,7 +289,7 @@ func (v *Verifier) updateCsvStrToDB(csvStr string) error {
 		JOIN %s t ON e.file_id = t.file_id and e.email_id = t.email_id
 		set
 			e.is_valid_syntax = t.is_valid_syntax,
-			e.is_reachable = t.is_reachable,
+			e.reachable = t.reachable,
 			e.is_deliverable = t.is_deliverable,
 			e.is_host_exists = t.is_host_exists,
 			e.has_mx_records = t.has_mx_records,
@@ -453,7 +457,7 @@ func (v *Verifier) verifyEmail(email string, batchIdx, idx int, retryState *Retr
 	}
 
 	emailDetails.IsCatchAll = ret.SMTP.CatchAll
-	emailDetails.IsReachable = ret.Reachable == "yes"
+	emailDetails.Reachable = ret.Reachable
 	emailDetails.IsDeliverable = ret.SMTP.Deliverable
 	emailDetails.IsHostExists = ret.SMTP.HostExists
 	emailDetails.IsDisposable = ret.Disposable

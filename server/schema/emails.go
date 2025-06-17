@@ -10,7 +10,7 @@ type EmailDetails struct {
 	FileId int64 `json:"fileId"`
 	EmailId string `json:"emailId"`
 	IsValidSyntax bool `json:"isValidSyntax"`
-	IsReachable bool `json:"isReachable"`
+	Reachable string `json:"reachable"`
 	IsDeliverable bool `json:"isDeliverable"`
 	IsHostExists bool `json:"isHostExists"`
 	HasMxRecords bool `json:"hasMxRecords"`
@@ -18,6 +18,11 @@ type EmailDetails struct {
 	IsCatchAll bool `json:"isCatchAll"`
 	IsInboxFull bool `json:"isInboxFull"`
 	ErrorMsg sql.NullString `json:"errorMsg"`
+}
+
+func NewEmailDetails() EmailDetails {
+	e := EmailDetails{}
+	return e
 }
 
 func (e *EmailDetails) ToCSV() string {
@@ -30,11 +35,11 @@ func (e *EmailDetails) ToCSV() string {
 	}
 
 	return fmt.Sprintf(
-		`"%d","%s","%d","%d","%d","%d","%d","%d","%d","%d","%s"`,
+		`"%d","%s","%d","%s","%d","%d","%d","%d","%d","%d","%s"`,
 		e.FileId,
 		strings.ReplaceAll(e.EmailId, `"`, `""`),
 		boolToInt(e.IsValidSyntax),
-		boolToInt(e.IsReachable),
+		e.Reachable,
 		boolToInt(e.IsDeliverable),
 		boolToInt(e.IsHostExists),
 		boolToInt(e.HasMxRecords),
@@ -62,12 +67,12 @@ func (e *EmailDetails) ToCSVLn() string {
 	}
 
 	return fmt.Sprintf(
-		`"%d","%s","%d","%d","%d","%d","%d","%d","%d","%d","%s"
+		`"%d","%s","%d","%s","%d","%d","%d","%d","%d","%d","%s"
 `,
 		e.FileId,
 		strings.ReplaceAll(e.EmailId, `"`, `""`),
 		boolToInt(e.IsValidSyntax),
-		boolToInt(e.IsReachable),
+		e.Reachable,
 		boolToInt(e.IsDeliverable),
 		boolToInt(e.IsHostExists),
 		boolToInt(e.HasMxRecords),

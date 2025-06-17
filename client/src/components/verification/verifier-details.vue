@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VerifierDetails } from '../types/verifierTypes';
+import type { VerifierDetails } from '../../types/verifierTypes';
 
 const props = defineProps<{
 	verifierDetails: VerifierDetails,

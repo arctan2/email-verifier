@@ -95,7 +95,7 @@ nav > *:hover{
 .cur-route::after{
 	display: block;
 	content: "";
-	background-color: white;
+	background-color: #8f07f7;
 	position: absolute;
 	width: 100%;
 	height: 3px;

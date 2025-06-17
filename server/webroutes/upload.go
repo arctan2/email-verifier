@@ -76,14 +76,15 @@ func (m *WebRoutesHandler) deleteFile(id int64) error {
 	return err
 }
 
-func (m *WebRoutesHandler) insertEmailsToDB(file multipart.File, fileId int64) (error) {
+func (m *WebRoutesHandler) insertEmailsToDB(file multipart.File, fileId int64) (int, error) {
 	buf, err := io.ReadAll(file)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	lines := bytes.Split(buf, []byte("\n"))
+	linesLen := 0
 
 	idBytes := make([]byte, len(buf))
 	// literally have no idea why I'm supposed to add the header
@@ -100,6 +101,7 @@ func (m *WebRoutesHandler) insertEmailsToDB(file multipart.File, fileId int64) (
 		lines[i] = append(b, bytes.ReplaceAll(lines[i], []byte(`"`), []byte(`""`))...)
 		lines[i] = append(lines[i], []byte("\"\n")...)
 		idBytes = append(idBytes, lines[i]...)
+		linesLen++
 	}
 
 	reader := bytes.NewReader(idBytes)
@@ -118,7 +120,7 @@ func (m *WebRoutesHandler) insertEmailsToDB(file multipart.File, fileId int64) (
 
 	_, err = m.db.Exec(query)
 
-	return err
+	return linesLen, err
 }
 
 func (m *WebRoutesHandler) uploadFile(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +144,9 @@ func (m *WebRoutesHandler) uploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = m.insertEmailsToDB(file, fileId); err != nil {
+	linesCount, err := m.insertEmailsToDB(file, fileId)
+	
+	if err != nil {
 		if e := m.deleteFile(fileId); e != nil {
 			fmt.Println(e.Error())
 		}
@@ -153,10 +157,12 @@ func (m *WebRoutesHandler) uploadFile(w http.ResponseWriter, r *http.Request) {
 	res := struct {
 		respond.ResponseStruct
 		FileName string `json:"fileName"`
+		EmailCount int `json:"emailCount"`
 		Id int64 `json:"id"`
 	}{
 		ResponseStruct: respond.SUCCESS,
 		FileName: fileName,
+		EmailCount: linesCount,
 		Id: fileId,
 	}
 

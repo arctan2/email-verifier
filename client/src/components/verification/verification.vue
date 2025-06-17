@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { Socket } from "../socket/socket"
-import { API_URL } from '../utils/fetch';
+import { Socket } from "../../socket/socket"
+import { API_URL } from '../../utils/fetch';
 import VerifierInput from "./verifier-input.vue";
 import VerifierDetailsComp from "./verifier-details.vue";
 import VerifierProgress from "./verifier-progress.vue";
 import VerifierDone from "./verifier-done.vue";
-import { setPopupError } from '../utils/popup-data';
-import { Status, type VerifierDetails } from "../types/verifierTypes";
-import type { EmailFile } from '../types/dbTypes';
+import { setPopupError } from '../../utils/popup-data';
+import { Status, type VerifierDetails } from "../../types/verifierTypes";
+import { verificationProps } from '../../state/verification-route-state';
+import router from '../../router';
 
-const props = defineProps<{
-	toVerifyCount: number,
-	curFile: EmailFile,
-	goToList: () => void
-}>();
-
-const ws = new Socket()
+const props = verificationProps.value;
+const ws = new Socket();
+const emit = defineEmits(['verification-complete'])
 
 const msg = ref("Loading...");
 const curStatus = ref<Status>(Status.NotCreated);
@@ -63,6 +60,9 @@ function listenWs() {
 			msg.value = (details as any).msg;
 			return;
 		}
+		if(curStatus.value === Status.Running && details.state === Status.Done) {
+			emit("verification-complete");
+		}
 		verifierDetails.value = details;
 		curStatus.value = details.state;
 		msg.value = "";
@@ -86,12 +86,12 @@ function removeVerifier() {
 
 function onDoneClick() {
 	removeVerifier();
-	props.goToList();
+	router.replace({ name: "Emails", query: { fileId: props.fileId } });
 }
 
 onMounted(async () => {
 	listenWs();
-	await ws.connect(API_URL(`/api/web/${props.curFile.id}/verification-ws`), _ => {
+	await ws.connect(API_URL(`/api/web/${props.fileId}/verification-ws`), _ => {
 		msg.value = "Error in making websocket connection";
 	});
 
@@ -144,13 +144,13 @@ onUnmounted(() => {
 @import "@css/common.css";
 
 .main-section {
-	height: calc(100dvh - 2rem);
+	height: 100%;
 	overflow: hidden;
 }
 
 .verify-container{
 	width: 100%;
-	height: calc(100dvh - 16dvh - 1rem);
+	height: 100%;
 	background-color: rgb(50, 50, 50);
 	border-radius: 6px;
 	position: relative;

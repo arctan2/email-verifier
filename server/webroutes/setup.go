@@ -45,6 +45,8 @@ func (m *WebRoutesHandler) deleteFileRoute(w http.ResponseWriter, r *http.Reques
 func (m *WebRoutesHandler) setupRoutes() {
 	m.mux.HandleFunc("GET /get-all-files", m.getAllFiles)
 	m.mux.HandleFunc("GET /{fileId}/get-file-details", m.getFileDetails)
+	m.mux.HandleFunc("GET /get-file-list-stats", m.getFileListStatsLimit)
+	m.mux.HandleFunc("GET /get-file-stats", m.getFileStats)
 	m.mux.HandleFunc("GET /{fileId}/get-email-details-list", m.getEmailDetailsList)
 
 	m.mux.HandleFunc("/{fileId}/verification-ws", m.verificationWsConn)
