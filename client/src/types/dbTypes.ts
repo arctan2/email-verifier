@@ -7,7 +7,7 @@ export type EmailDetails = {
 	fileId: number,
 	emailId: string,
 	isValidSyntax: boolean,
-	isReachable: boolean,
+	reachable: string,
 	isDeliverable: boolean,
 	isHostExists: boolean,
 	hasMxRecords: boolean,

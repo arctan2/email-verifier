@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{
 	length: number,
@@ -17,6 +17,10 @@ const toShow = computed(() => {
 	}
 
 	return toShow;
+})
+
+watch(props, () => {
+	curPage.value = 0;
 })
 
 const state = computed(() => {

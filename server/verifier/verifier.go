@@ -465,3 +465,56 @@ func (v *Verifier) verifyEmail(email string, batchIdx, idx int, retryState *Retr
 
 	v.incProgress(1, 0, 0)
 }
+
+
+func VerifyEmail(email string) schema.EmailDetails {
+	e := schema.EmailDetails{}
+
+	// var (
+	// 	verifier = emailverifier.
+	// 		NewVerifier().
+	// 		EnableSMTPCheck().
+	// 		EnableCatchAllCheck()
+	// )
+
+	var (
+		verifier = NewTestVerifier().
+			EnableSMTPCheck().
+			EnableCatchAllCheck()
+	)
+
+	ret, err := verifier.Verify(email)
+
+	e.EmailId = email
+
+	if ret != nil {
+		e.ErrorMsg = sql.NullString{String: "", Valid: true}
+
+		if !ret.Syntax.Valid {
+			e.IsValidSyntax = false
+			return e
+		}
+		e.IsValidSyntax = ret.Syntax.Valid
+		e.HasMxRecords = ret.HasMxRecords
+	}
+
+	if err != nil {
+		e.ErrorMsg = sql.NullString{String: err.Error(), Valid: true}
+		return e
+	}
+
+	if ret == nil || ret.SMTP == nil {
+		e.IsHostExists = false
+		e.ErrorMsg = sql.NullString{String: "ret or SMTP is nil", Valid: true}
+		return e
+	}
+
+	e.IsCatchAll = ret.SMTP.CatchAll
+	e.Reachable = ret.Reachable
+	e.IsDeliverable = ret.SMTP.Deliverable
+	e.IsHostExists = ret.SMTP.HostExists
+	e.IsDisposable = ret.Disposable
+	e.IsInboxFull = ret.SMTP.FullInbox
+
+	return e
+}

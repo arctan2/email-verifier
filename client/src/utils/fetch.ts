@@ -1,4 +1,5 @@
-export const baseURL = "http://192.168.0.107:8000";
+// export const baseURL = "http://192.168.0.107:8000";
+export const baseURL = "http://localhost:8000";
 // export const baseURL = "";
 
 export function API_URL(...endpoints: string[]) {

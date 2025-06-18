@@ -5,13 +5,13 @@ import Dashboard from "./views/Dashboard.vue";
 import DashboardQuickVerify from "./components/dashboard/quick-verify.vue";
 import DashboardFiles from "./components/dashboard/files.vue";
 import FileOfId from "./views/FileOfId.vue";
-import EmailDetailsList from "./components/email-details-list.vue";
+import EmailDetailsList from "./components/email-list/email-details-list.vue";
 import Verification from "./components/verification/verification.vue";
 
 const routes: Array<RouteRecordRaw> = [
 	{ path: "/", component: RootRoute },
 	{ 
-		path: "/dashboard", component: Dashboard, 
+		path: "/dashboard", component: Dashboard, name: 'Dashboard',
 		children: [
 			{
 				name: "QuickVerify",

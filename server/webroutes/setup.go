@@ -52,6 +52,8 @@ func (m *WebRoutesHandler) setupRoutes() {
 	m.mux.HandleFunc("/{fileId}/verification-ws", m.verificationWsConn)
 
 	m.mux.HandleFunc("POST /upload-file", m.uploadFile)
+	m.mux.HandleFunc("POST /verify-emails", m.verifyEmails)
+	m.mux.HandleFunc("POST /filter-emails", m.filterEmails)
 
 	m.mux.HandleFunc("DELETE /delete-file", m.deleteFileRoute)
 }

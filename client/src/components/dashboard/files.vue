@@ -123,8 +123,8 @@ function navigateDetails(file: FileStats) {
 		<template v-else>
 			<div id="files-list" class="scroll-bar">
 				<div class="upload-file">
-					<label for="upload-excel-files" class="upload-input">Click to upload files</label>
-					<input type="file" accept=".txt" id="upload-excel-files" @change="handleFileSelect" multiple>
+					<label for="upload-files" class="upload-input">Click to upload files</label>
+					<input type="file" accept=".txt,.csv" id="upload-files" @change="handleFileSelect" multiple>
 				</div>
 
 				<div v-for="f, idx in uploadingList" :key="idx" class="file-container">

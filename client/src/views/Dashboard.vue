@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import router from '../router';
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterLink, RouterView, useRoute } from 'vue-router';
+
+const route = useRoute();
 
 function logout() {
 	localStorage.clear();
@@ -14,7 +16,9 @@ const curRoute = computed(() => {
 })
 
 onMounted(() => {
-	router.replace("/dashboard/files");
+	if(route.name === 'Dashboard') {
+		router.replace("/dashboard/files");
+	}
 })
 
 </script>

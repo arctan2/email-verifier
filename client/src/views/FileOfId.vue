@@ -76,14 +76,16 @@ async function verificationComplete() {
 				<RouterLink
 					:class="route.name === 'Emails' ? 'current' : ''"
 					:to="{ path: `/file/emails`, query: { fileId } }"
+					:replace="true"
 				>Emails</RouterLink>
 
 				<RouterLink
 					:class="route.name === 'Verification' ? 'current' : ''"
 					:to="{ path: `/file/verification`, query: { fileId } }"
+					:replace="true"
 				>Verification</RouterLink>
 
-				<RouterLink :to="{ path: `/dashboard`, query: { fileId } }">Go Back</RouterLink>
+				<RouterLink :to="{ path: `/dashboard`, query: { fileId } }" :replace="true">Go Back</RouterLink>
 			</nav>
 		</div>
 		<div class="content" v-if="msg === ''">
