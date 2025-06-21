@@ -37,6 +37,9 @@ onMounted(() => {
 				<RouterLink to="/dashboard/quick-verify" :replace="true" :class="[curRoute === 'quick-verify' ? 'cur-route' : '']">
 					Quick Verify
 				</RouterLink>
+				<RouterLink to="/dashboard/proxy" :replace="true" :class="[curRoute === 'proxy' ? 'cur-route' : '']">
+					Proxy
+				</RouterLink>
 			</nav>
 			<router-view />
 		</div>

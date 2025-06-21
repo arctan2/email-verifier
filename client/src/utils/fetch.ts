@@ -55,6 +55,14 @@ export async function fetchPostRaw<T>(endpoint: string, body?: any, abortControl
 	}
 }
 
+export async function fetchPost<T>(endpoint: string, body?: any, abortController?: AbortController): Promise<ApiResponse & T> {
+	if(typeof body !== "string") {
+		body = JSON.stringify(body);
+	}
+
+	return fetchPostRaw(endpoint, body, abortController);
+}
+
 export async function fetchPostWithHeader<T>(
 	endpoint: string,
 	headers: any,
@@ -77,12 +85,27 @@ export async function fetchPostWithHeader<T>(
 	}
 }
 
-export async function fetchPost<T>(endpoint: string, body?: any, abortController?: AbortController): Promise<ApiResponse & T> {
-	if(typeof body !== "string") {
-		body = JSON.stringify(body);
-	}
+export async function fetchPut<T>(endpoint: string, body?: any, abortController?: AbortController): Promise<ApiResponse & T> {
+	try {
+		if(typeof body !== "string") {
+			body = JSON.stringify(body);
+		}
 
-	return fetchPostRaw(endpoint, body, abortController);
+		const response = await fetch(API_URL(`/api/web${endpoint}`), {
+			method: "PUT",
+			signal: abortController?.signal,
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body
+		})
+
+		const data: { err: boolean, msg: string } & T = await response.json();
+
+		return { response, ...data };
+	} catch(e) {
+		return { err: true, msg: String(e) } as ApiResponse & T;
+	}
 }
 
 export async function fetchDelete<T>(endpoint: string, abortController?: AbortController): Promise<ApiResponse & T> {

@@ -112,7 +112,7 @@ onMounted(() => {
 		<EmailList :emailList="emailList" :filterers="filterers" @filter-change="() => onFilterChange(getToFilter(), prevFilterFrom)" />
 		<Pagination :length="pagesCount" :to-show="5" :on-change="handlePageChange" />
 	</div>
-	<div class="refreshing" v-if="showLoadingMessage !== ''">{{ showLoadingMessage }}</div>
+	<div class="loading" v-if="showLoadingMessage !== ''">{{ showLoadingMessage }}</div>
 </div>
 </template>
 
@@ -167,19 +167,6 @@ h1{
 	height: 100%;
 	object-fit: contain;
 	pointer-events: none;
-}
-
-.refreshing{
-	position: absolute;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, 0.7);
-	border-radius: 6px;
 }
 
 @media (max-width: 55rem){

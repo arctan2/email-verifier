@@ -9,6 +9,7 @@ type File struct {
 type FileStats struct {
 	FileId int64 `json:"fileId"`
 	FileName string `json:"fileName"`
+	CreatedDateTime string `json:"createdDateTime"`
 	TotalEmails int64 `json:"totalEmails"`
 	InvalidSyntax int64 `json:"invalidSyntax"`
 	Reachable int64 `json:"reachable"`

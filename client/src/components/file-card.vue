@@ -14,6 +14,7 @@ const { file: f } = defineProps<{
 <template>
 	<div class="file-container">
 		<h3>{{ f.fileName }}</h3>
+		<div class="created-date-time">{{ f.createdDateTime }}</div>
 		<slot name="afterFileName"></slot>
 		<div>
 			<div class="left-section">
@@ -70,7 +71,7 @@ const { file: f } = defineProps<{
 .file-container {
 	position: relative;
 	padding: 1rem;
-	height: 20rem;
+	min-height: 21rem;
 	min-width: 30rem;
 	width: 32%;
 	background-color: rgb(60, 60, 60);
@@ -81,6 +82,13 @@ const { file: f } = defineProps<{
 
 .file-container h3 {
 	font-size: 1.25rem;
+}
+
+.created-date-time{
+	color: rgb(150, 150, 150);
+	font-size: 0.8rem;
+	font-family: monospace;
+	margin-top: 0.2rem;
 	margin-bottom: 1rem;
 }
 

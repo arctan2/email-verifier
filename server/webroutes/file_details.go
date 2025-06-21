@@ -2,12 +2,46 @@ package webroutes
 
 import (
 	"context"
+	"email_verify/db"
 	"email_verify/respond"
 	"email_verify/schema"
 	"encoding/json"
 	"net/http"
 	"time"
 )
+
+func (m *WebRoutesHandler) getFileDetails(w http.ResponseWriter, r *http.Request) {
+	fileId, err := parseInt64PathValue("fileId", r)
+	if err != nil {
+		respond.RespondErrMsg(w, err.Error())
+		return
+	}
+
+	totalEmailCount, err := db.GetTotalEmailCount(m.db, fileId)
+	if err != nil {
+		respond.RespondErrMsg(w, err.Error())
+		return
+	}
+
+	toVerifyCount, err := db.GetToVerifyCount(m.db, fileId)
+	if err != nil {
+		respond.RespondErrMsg(w, err.Error())
+		return
+	}
+
+	res := struct {
+		respond.ResponseStruct
+		EmailsCount   int64 `json:"emailsCount"`
+		ToVerifyCount int64 `json:"toVerifyCount"`
+	}{
+		ResponseStruct: respond.SUCCESS,
+		EmailsCount:    totalEmailCount,
+		ToVerifyCount:  toVerifyCount,
+	}
+
+	json.NewEncoder(w).Encode(&res)
+}
+
 
 func (m *WebRoutesHandler) getFileListStatsLimit(w http.ResponseWriter, r *http.Request) {
 	userId := r.URL.Query().Get("userId")
@@ -55,6 +89,7 @@ func (m *WebRoutesHandler) getFileListStatsLimit(w http.ResponseWriter, r *http.
 		if err := rows.Scan(
 			&d.FileId,
 			&d.FileName,
+			&d.CreatedDateTime,
 			&d.TotalEmails,
 			&d.InvalidSyntax,
 			&d.Reachable,
@@ -122,6 +157,7 @@ func (m *WebRoutesHandler) getFileStats(w http.ResponseWriter, r *http.Request) 
 
 	if err := row.Scan(
 		&d.FileName,
+		&d.CreatedDateTime,
 		&d.TotalEmails,
 		&d.InvalidSyntax,
 		&d.Reachable,

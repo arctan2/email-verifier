@@ -42,18 +42,35 @@ func (m *WebRoutesHandler) deleteFileRoute(w http.ResponseWriter, r *http.Reques
 	respond.RespondSuccess(w)
 }
 
-func (m *WebRoutesHandler) setupRoutes() {
+func (m *WebRoutesHandler) setupProxyRoutes() {
+	m.mux.HandleFunc("GET /get-proxy-list", m.getProxyList)
+	m.mux.HandleFunc("POST /insert-proxy", m.insertProxy)
+	m.mux.HandleFunc("PUT /{proxyId}/update-proxy", m.updateProxy)
+	m.mux.HandleFunc("DELETE /{proxyId}/delete-proxy", m.deleteProxy)
+}
+
+func (m *WebRoutesHandler) setupFileRoutes() {
 	m.mux.HandleFunc("GET /get-all-files", m.getAllFiles)
 	m.mux.HandleFunc("GET /{fileId}/get-file-details", m.getFileDetails)
 	m.mux.HandleFunc("GET /get-file-list-stats", m.getFileListStatsLimit)
 	m.mux.HandleFunc("GET /get-file-stats", m.getFileStats)
-	m.mux.HandleFunc("GET /{fileId}/get-email-details-list", m.getEmailDetailsList)
-
-	m.mux.HandleFunc("/{fileId}/verification-ws", m.verificationWsConn)
 
 	m.mux.HandleFunc("POST /upload-file", m.uploadFile)
-	m.mux.HandleFunc("POST /verify-emails", m.verifyEmails)
-	m.mux.HandleFunc("POST /filter-emails", m.filterEmails)
 
 	m.mux.HandleFunc("DELETE /delete-file", m.deleteFileRoute)
+}
+
+func (m *WebRoutesHandler) setupEmailRoutes() {
+	m.mux.HandleFunc("GET /{fileId}/get-email-details-list", m.getEmailDetailsList)
+
+	m.mux.HandleFunc("POST /verify-emails", m.verifyEmails)
+	m.mux.HandleFunc("POST /filter-emails", m.filterEmails)
+}
+
+func (m *WebRoutesHandler) setupRoutes() {
+	m.setupFileRoutes()
+	m.setupEmailRoutes()
+	m.setupProxyRoutes()
+
+	m.mux.HandleFunc("/{fileId}/verification-ws", m.verificationWsConn)
 }

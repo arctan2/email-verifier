@@ -150,7 +150,7 @@ function navigateDetails(file: FileStats) {
 				</FileCard>
 			</div>
 		</template>
-		<div class="refreshing" v-if="showLoadingMessage !== ''">{{ showLoadingMessage }}</div>
+		<div class="loading" v-if="showLoadingMessage !== ''">{{ showLoadingMessage }}</div>
 	</div>
 </template>
 
@@ -175,21 +175,6 @@ function navigateDetails(file: FileStats) {
 	max-height: 84dvh;
 }
 
-.refreshing {
-	position: absolute;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, 0.7);
-	z-index: 100;
-	border-radius: 6px;
-	color: white;
-}
-
 .upload-input {
 	display: flex;
 	justify-content: center;
@@ -204,9 +189,8 @@ function navigateDetails(file: FileStats) {
 	user-select: none;
 	position: relative;
 	padding: 1rem;
-	height: 20rem;
+	min-height: 21rem;
 	min-width: 30rem;
-	width: 32%;
 	background-color: rgb(60, 60, 60);
 	border-radius: 10px;
 	box-shadow: 0 5px 15px rgb(0, 0, 0, 0.2);

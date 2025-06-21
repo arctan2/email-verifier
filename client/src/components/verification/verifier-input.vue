@@ -10,7 +10,7 @@ const props = defineProps<{
 const batchSizeInput = ref(1000);
 const delayMsInput = ref(1000);
 const retryCountInput = ref(3);
-const proxiesInput = ref("");
+const proxiesInput = ref("socks5h://somedude_Uh6Ig:Password_005@dc.oxylabs.io:8001");
 
 function createVerifier() {
 	let batchSize = Number(batchSizeInput.value);
@@ -86,8 +86,7 @@ h1{
 }
 
 #proxies{
-	width: 25rem;
+	width: 40rem;
 	padding: 0.5rem;
-	resize: none;
 }
 </style>

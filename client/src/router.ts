@@ -4,6 +4,7 @@ import RootRoute from "./root-route.vue";
 import Dashboard from "./views/Dashboard.vue";
 import DashboardQuickVerify from "./components/dashboard/quick-verify.vue";
 import DashboardFiles from "./components/dashboard/files.vue";
+import DashboardProxy from "./components/dashboard/proxy.vue";
 import FileOfId from "./views/FileOfId.vue";
 import EmailDetailsList from "./components/email-list/email-details-list.vue";
 import Verification from "./components/verification/verification.vue";
@@ -22,6 +23,11 @@ const routes: Array<RouteRecordRaw> = [
 				name: "Files",
 				path: "files",
 				component: DashboardFiles
+			},
+			{
+				name: "Proxy",
+				path: "proxy",
+				component: DashboardProxy
 			},
 		]
 	},

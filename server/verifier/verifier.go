@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	emailverifier "github.com/AfterShip/email-verifier"
 	"github.com/go-sql-driver/mysql"
 	// emailverifier "github.com/AfterShip/email-verifier"
 )
@@ -378,18 +379,19 @@ func (v *Verifier) retryBatch(emails []string, isLastRetry bool, retryState *Ret
 }
 
 func (v *Verifier) verifyEmail(email string, batchIdx, idx int, retryState *RetryState, isLastRetry bool, wg *sync.WaitGroup) {
-	// var (
-	// 	verifier = emailverifier.
-	// 		NewVerifier().
-	// 		EnableSMTPCheck().
-	// 		EnableCatchAllCheck()
-	// )
-
+	// socks5://user:password@127.0.0.1:1080?timeout=5s
 	var (
-		verifier = NewTestVerifier().
+		verifier = emailverifier.
+			NewVerifier().
 			EnableSMTPCheck().
 			EnableCatchAllCheck()
 	)
+
+	// var (
+	// 	verifier = NewTestVerifier().
+	// 		EnableSMTPCheck().
+	// 		EnableCatchAllCheck()
+	// )
 
 	if v.CurProxyIdx != -1 {
 		verifier = verifier.Proxy(v.Proxies[v.CurProxyIdx])

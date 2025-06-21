@@ -20,6 +20,7 @@ export type EmailDetails = {
 export class FileStats {
 	fileId: number = 0
 	fileName: string = ""
+	createdDateTime: string = ""
 	totalEmails: number = 0
 	invalidSyntax: number = 0
 	reachable: number = 0
@@ -32,3 +33,13 @@ export class FileStats {
 	errored: number = 0
 }
 
+export class ProxyDetails {
+	id: number = -1
+	userId: string = ""
+	proto: string = "socks5"
+	host: string = ""
+	port: string = ""
+	name: string = ""
+	password: string = ""
+	isInUse: boolean = false
+}
