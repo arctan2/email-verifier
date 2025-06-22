@@ -44,13 +44,14 @@
 }
 
 .scroll-bar::-webkit-scrollbar{
-	background-color: rgb(180, 180, 180);
+	background-color: rgb(80, 80, 80);
 	width: 8px;
 	height: 8px;
+	border-radius: 3px;
 }
 
 .scroll-bar::-webkit-scrollbar-thumb{
-	background-color: rgb(100, 100, 150);
+	background-color: rgb(200, 200, 200);
 	border-radius: 3px;
 }
 

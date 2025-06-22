@@ -42,4 +42,5 @@ export class ProxyDetails {
 	name: string = ""
 	password: string = ""
 	isInUse: boolean = false
+	isEnabled: boolean = true
 }

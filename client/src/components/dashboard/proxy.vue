@@ -87,6 +87,17 @@ function saveProxy(proxy: ProxyDetails) {
 	editIdx.value = -1;
 }
 
+async function toggleEnable(idx: number) {
+	showLoadingMessage.value = "Updating...";
+	const proxy = list.value[idx];
+	const res = await fetchPut(`/${proxy.id}/update-proxy-is-enabled?isEnabled=${!proxy.isEnabled}&userId=${getUserId()}`);
+	if(res.err) {
+		setPopupError(res.msg);
+	}
+	showLoadingMessage.value = "";
+	refresh();
+}
+
 fetchProxyList();
 
 </script>
@@ -120,7 +131,7 @@ fetchProxyList();
 					<div class="pad"></div>
 				</div>
 
-				<div class="proxy-item" v-for="proxy, idx in list">
+				<div :class="['proxy-item', proxy.isEnabled ? '' : 'disabled']" v-for="proxy, idx in list">
 					<EditProxy
 						v-if="editIdx === idx"
 						:proxy="{...proxy}"
@@ -143,6 +154,9 @@ fetchProxyList();
 							</div>
 							<div @click="deleteIdx = idx">
 								<img :src="DeleteIcon" alt="">
+							</div>
+							<div>
+								<div class="block-icon" @click="toggleEnable(idx)"></div>
 							</div>
 						</div>
 					</template>
@@ -209,6 +223,19 @@ fetchProxyList();
 	margin-bottom: 0.5rem;
 	padding: 0.5rem 0;
 	min-width: max-content;
+}
+
+.proxy-item.disabled{
+	background-color: rgba(80, 80, 80, 0.2);
+	color: rgba(255, 255, 255, 0.3);
+}
+
+.proxy-item.disabled .icon-btns div {
+	opacity: 0.2;
+}
+
+.proxy-item.disabled .icon-btns div:last-child {
+	opacity: 1;
 }
 
 .icon-btns{
@@ -282,6 +309,9 @@ fetchProxyList();
 	text-align: center;
 	margin: 0 1rem;
 	position: relative;
+	max-width: 10ch;
+	text-overflow: ellipsis;
+	overflow: hidden;
 }
 
 .titles div::after{
@@ -301,6 +331,27 @@ fetchProxyList();
 
 .pad{
 	width: 100%;
+}
+
+.block-icon{
+	--clr: rgb(255, 100, 100);
+	position: relative;
+	width: 100%;
+	height: 100%;
+	border: 4px solid var(--clr);
+	border-radius: 5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.block-icon::after{
+	content: "";
+	position: absolute;
+	height: 4px;
+	width: 100%;
+	background-color: var(--clr);
+	transform: rotate(-45deg);
 }
 
 </style>

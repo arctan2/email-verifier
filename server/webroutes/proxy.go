@@ -43,6 +43,7 @@ func (m *WebRoutesHandler) getProxyList(w http.ResponseWriter, r *http.Request) 
 			&p.Name,
 			&p.Password,
 			&p.IsInUse,
+			&p.IsEnabled,
 		); err != nil {
 			respond.RespondErrMsg(w, err.Error())
 			return
@@ -171,3 +172,57 @@ func (m *WebRoutesHandler) updateProxy(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(&respond.SUCCESS)
 }
+
+func (m *WebRoutesHandler) updateProxyIsEnabled(w http.ResponseWriter, r *http.Request) {
+	userId := r.URL.Query().Get("userId")
+
+	if userId == "" {
+		respond.RespondErrMsg(w, "userId not present.")
+		return
+	}
+
+	proxyId, err := parseInt64PathValue("proxyId", r)
+
+	if err != nil {
+		respond.RespondErrMsg(w, err.Error())
+		return
+	}
+
+	value := r.URL.Query().Get("isEnabled")
+
+	if value == "" {
+		respond.RespondErrMsg(w, "isEnabled not set.")
+		return
+	}
+
+	var isEnabled bool
+
+	if value == "false" {
+		isEnabled = false
+	} else if value == "true" {
+		isEnabled = true
+	} else {
+		respond.RespondErrMsg(w, "unknown value for isEnabled.")
+		return
+	}
+
+	q := `call sp_update_proxy_is_enabled(?, ?, ?)`
+
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+
+	_, err = m.db.ExecContext(
+		ctx, q,
+		userId,
+		proxyId,
+		isEnabled,
+	)
+
+	if err != nil {
+		respond.RespondErrMsg(w, err.Error())
+		return
+	}
+
+	json.NewEncoder(w).Encode(&respond.SUCCESS)
+}
+

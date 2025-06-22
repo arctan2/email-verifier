@@ -46,6 +46,7 @@ func (m *WebRoutesHandler) setupProxyRoutes() {
 	m.mux.HandleFunc("GET /get-proxy-list", m.getProxyList)
 	m.mux.HandleFunc("POST /insert-proxy", m.insertProxy)
 	m.mux.HandleFunc("PUT /{proxyId}/update-proxy", m.updateProxy)
+	m.mux.HandleFunc("PUT /{proxyId}/update-proxy-is-enabled", m.updateProxyIsEnabled)
 	m.mux.HandleFunc("DELETE /{proxyId}/delete-proxy", m.deleteProxy)
 }
 

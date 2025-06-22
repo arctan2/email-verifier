@@ -9,4 +9,5 @@ type ProxyDetails struct {
 	Name string `json:"name"`
 	Password string `json:"password"`
 	IsInUse bool `json:"isInUse"`
+	IsEnabled bool `json:"isEnabled"`
 }
